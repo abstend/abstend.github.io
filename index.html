@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abstend: does your model know when to say "I don't know"?</title>
+<meta name="description" content="Independent scorecards for the open AI models people actually run: the specific file, quantization and settings, measured for knowledge and for honesty about what they don't know. By Mark Galyan.">
+<meta name="author" content="Mark Galyan">
+<meta property="og:title" content="Abstend: independent honesty scorecards for open models">
+<meta property="og:description" content="The specific file you download, measured: what it knows, whether it admits what it doesn't, and whether it refuses too much. Receipts for every number.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #eef2f0; --surface: #fbfcfb; --ink: #15201c; --muted: #5a6a63; --rule: #d3dcd8;
+  --good: #1d7a63; --warn: #b4502a; --know: #3559a4; --track: #e2e9e6;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 40px 16px 64px; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: clamp(2.1rem, 5.4vw, 3.4rem); line-height: 1.04; }
+h2 { font-size: 1.45rem; line-height: 1.2; }
+h3 { font-size: 1.08rem; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--know); }
+a:focus-visible { outline: 2px solid var(--know); outline-offset: 2px; }
+.eyebrow { font: 500 0.76rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 16px; }
+.lede { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.byline { font: 0.86rem var(--mono); color: var(--muted); }
+.byline b { color: var(--ink); font-weight: 500; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 10px 16px; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid var(--rule); color: var(--ink); background: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 0.84rem var(--mono); color: var(--muted); }
+.counts b { color: var(--ink); font-weight: 500; }
+section { display: grid; gap: 16px; }
+.section-lede { color: var(--muted); max-width: 70ch; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.panel p { color: var(--muted); font-size: 0.95rem; }
+.swatch { width: 28px; height: 6px; border-radius: 3px; }
+.finding { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--warn); border-radius: 10px; padding: 20px; display: grid; gap: 12px; }
+.finding p { max-width: 72ch; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { font: 500 0.72rem var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+td.neg { color: var(--warn); font-weight: 600; }
+.note { font-size: 0.86rem; color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 74ch; }
+ol.log { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+ol.log li { display: grid; grid-template-columns: 7.2em 1fr; gap: 12px; }
+ol.log time { font: 0.84rem var(--mono); color: var(--muted); padding-top: 2px; }
+@media (max-width: 560px) { ol.log li { grid-template-columns: 1fr; gap: 2px; } }
+footer { border-top: 1px solid var(--rule); padding-top: 20px; display: grid; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+footer .help { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <span class="eyebrow">Abstend</span>
+  <h1>Does the model you downloaded know when to say "I don't know"?</h1>
+  <p class="lede"><strong>Independent scorecards for the open models people actually run</strong>: the specific file,
+    quantization and server settings, not the lab's full-precision API. Each card measures what a model knows, whether
+    it admits what it doesn't, and whether it refuses too much. Every number links to a receipt.</p>
+  <p class="byline">By <b>Mark Galyan</b>. The dyno sheet, not the brochure.</p>
+  <div class="cta">
+    <a class="btn primary" href="scorecard.html">Open the scorecards</a>
+    <a class="btn" href="#finding">Latest finding</a>
+    <a class="btn" href="https://github.com/apollo-mg/Project-Apollo/tree/main/data/receipts">All receipts</a>
+  </div>
+  <div class="counts"><span><b>27</b> models</span><span><b>89</b> measured configurations</span><span><b>17</b> developers</span><span>run on local GPUs</span></div>
+</header>
+
+<section aria-labelledby="what">
+  <h2 id="what">What a card measures</h2>
+  <p class="section-lede">The core test asks 240 short factual questions built from Wikidata: 40 easy, 100 hard but
+    real, and 100 about things that do not exist (a novel, a university, a person invented from real patterns). A model
+    that knows when to stop should answer the real ones and decline the invented ones.</p>
+  <div class="meters">
+    <div class="panel"><div class="swatch" style="background:var(--know)"></div><h3>Knows</h3>
+      <p>How many hard real questions it answers correctly.</p></div>
+    <div class="panel"><div class="swatch" style="background:var(--good)"></div><h3>Admits it doesn't know</h3>
+      <p>How many invented questions it declines instead of making up an answer.</p></div>
+    <div class="panel"><div class="swatch" style="background:var(--warn)"></div><h3>Refuses too much</h3>
+      <p>How many real questions it declines. A model that refuses everything is not honest, just useless.</p></div>
+  </div>
+  <p class="note">Each rate comes with its 95% interval and sample size. A card describes one file at one setting; it
+    is not a rating of the model family.</p>
+</section>
+
+<section id="finding" aria-labelledby="finding-title">
+  <h2 id="finding-title">Latest finding: post-trained variants say "I don't know" less, and know no more</h2>
+  <div class="finding">
+    <p>Every post-trained variant of an open model measured so far declined fewer invented questions than the model it
+      was built from, and none answered more real ones correctly. Five variants, five drops, four of them clear of
+      noise. Each pair ran on the same build in the same sitting, and each base was replayed that day byte for byte.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Variant (what it is)</th><th>Knows: base &rarr; variant</th><th>Declines invented: base &rarr; variant</th><th>Change [95% CI]</th></tr></thead>
+      <tbody>
+        <tr><td>Sage-A1.5 (science fine-tune of Qwen3.6-35B-A3B)</td><td>0.67 &rarr; 0.64</td><td>0.67 &rarr; 0.48</td><td class="neg">-0.19 [-0.28, -0.11]</td></tr>
+        <tr><td>Spark-X2.6-4B (point release of 2.5)</td><td>0.15 &rarr; 0.15</td><td>0.46 &rarr; 0.31</td><td class="neg">-0.15 [-0.23, -0.08]</td></tr>
+        <tr><td>Arete-27B (values fine-tune of Qwen3.8-27B)</td><td>0.50 &rarr; 0.50</td><td>0.60 &rarr; 0.48</td><td class="neg">-0.12 [-0.18, -0.06]</td></tr>
+        <tr><td>Qwen3.8-27B abliterated (refusal-removal edit)</td><td>0.52 &rarr; 0.50</td><td>0.63 &rarr; 0.55</td><td>-0.08 (p = 0.09)</td></tr>
+        <tr><td>Qwopus3.8-27B-Coder-Flash (code distillation)</td><td>0.50 &rarr; 0.48</td><td>0.60 &rarr; 0.53</td><td class="neg">-0.07 [-0.13, -0.02]</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Short English factual questions, thinking off, the word UNKNOWN offered in the prompt. "Knows" means
+      obscure facts, not the skill each variant was built for. Sage's drop held at matched precision and under its own
+      sampling. Full caveats and receipts: <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/abstend/FACT_SHEET_FINETUNE_SERIES.md">the fact sheet</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="why">
+  <h2 id="why">Why these numbers can be checked</h2>
+  <ul class="plain">
+    <li><strong>The actual file.</strong> Every card names the file and its sha256, the build, the flags and the
+      sampling. A label like "Q4_K_M" is not a spec; the hash is.</li>
+    <li><strong>Written down before the run.</strong> Each comparison is preregistered, predictions included, and
+      committed before the first answer.</li>
+    <li><strong>Replayed.</strong> Base models are rerun alongside each variant and must match their stored answers
+      byte for byte.</li>
+    <li><strong>No lab grades its own homework here.</strong> Nothing is sponsored; models are run on hardware I own.</li>
+    <li><strong>Corrections are public.</strong> When a number turns out wrong, it is struck, not deleted, and the log
+      below says why.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="corrections">
+  <h2 id="corrections">Corrections log</h2>
+  <ol class="log">
+    <li><time datetime="2026-11-16">2026-11-16</time><span>Agent pilot: all 13 episodes that ran out of steps were
+      stuck in loops, not 8. Five repeated a command with one more line each step, which an exact-match check missed.
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/agentic-gaming/RESULT_PILOT_v0.md">Receipt</a></span></li>
+    <li><time datetime="2026-11-10">2026-11-10</time><span>The over-refusal meter graded strictly while the refusal
+      meter graded leniently. Measured one way for both, two small models refuse 38% and 69% of real hard questions.
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sci-distill/RESULT_SCI_DISTILL.md">Receipt</a></span></li>
+    <li><time datetime="2026-11-09">2026-11-09</time><span>Sage had been compared with its base at different
+      precisions; an outside reader's probe raised it. At matched precision the drop is -0.19, not -0.22.
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/quant-abstention/RESULT_SAGE_MATCHED.md">Receipt</a></span></li>
+    <li><time datetime="2026-10-31">2026-10-31</time><span>A drift in Llama 3.1 answers blamed on a system update was
+      the date its chat template writes into the prompt. With the date pinned, 1,000 of 1,000 answers reproduce.
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/abstend/llama-3.1-8b-instruct/RESULT_DRIFT_CAUSE.md">Receipt</a></span></li>
+    <li><time datetime="2026-09-27">2026-09-27</time><span>Some quantized files looked more willing to make things
+      up; that showed only when the answer was forced, not in the model's own replies.
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/quant-abstention/RESULT_MAIN.md">Receipt</a></span></li>
+  </ol>
+</section>
+
+<section aria-labelledby="more">
+  <h2 id="more">More</h2>
+  <ul class="plain">
+    <li><a href="scorecard.html">The scorecards</a>: every model, every configuration, with intervals.</li>
+    <li><a href="badges/">Badges</a> for model cards and READMEs.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo">Project Apollo</a>: the lab notebook behind it, with
+      every receipt, script and raw answer table (benchmark questions themselves stay private).</li>
+    <li>Want a model carded, or think a number is wrong? Open an issue on
+      <a href="https://github.com/abstend">GitHub</a>.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Abstend is by Mark Galyan. Measurements on local hardware; methods and receipts are public.</p>
+  <p class="help">Looking for addiction support? This site is about testing AI models. SAMHSA's National Helpline is
+    free, confidential and open 24/7: <a href="tel:18006624357">1-800-662-4357</a>. In a crisis, call or text
+    <a href="tel:988">988</a>.</p>
+</footer>
+
+</main>
+</body>
+</html>
