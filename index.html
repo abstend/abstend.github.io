@@ -68,6 +68,14 @@ ol.log { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
 ol.log li { display: grid; grid-template-columns: 7.2em 1fr; gap: 12px; }
 ol.log time { font: 0.84rem var(--mono); color: var(--muted); padding-top: 2px; }
 @media (max-width: 560px) { ol.log li { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 600px) {
+  .tbl table, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+  .tbl thead { display: none; }
+  .tbl tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .tbl td { border: 0; padding: 2px 0; text-align: left; white-space: normal; }
+  .tbl td:first-child { font-weight: 600; }
+  .tbl td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font: 0.78rem var(--mono); }
+}
 footer { border-top: 1px solid var(--rule); padding-top: 20px; display: grid; gap: 12px; font-size: 0.88rem; color: var(--muted); }
 footer .help { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; color: var(--ink); }
 </style>
@@ -116,11 +124,11 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
     <div class="tbl"><table>
       <thead><tr><th>Variant (what it is)</th><th>Knows: base &rarr; variant</th><th>Declines invented: base &rarr; variant</th><th>Change [95% CI]</th></tr></thead>
       <tbody>
-        <tr><td>Sage-A1.5 (science fine-tune of Qwen3.6-35B-A3B)</td><td>0.67 &rarr; 0.64</td><td>0.67 &rarr; 0.48</td><td class="neg">-0.19 [-0.28, -0.11]</td></tr>
-        <tr><td>Spark-X2.6-4B (point release of 2.5)</td><td>0.15 &rarr; 0.15</td><td>0.46 &rarr; 0.31</td><td class="neg">-0.15 [-0.23, -0.08]</td></tr>
-        <tr><td>Arete-27B (values fine-tune of Qwen3.8-27B)</td><td>0.50 &rarr; 0.50</td><td>0.60 &rarr; 0.48</td><td class="neg">-0.12 [-0.18, -0.06]</td></tr>
-        <tr><td>Qwen3.8-27B abliterated (refusal-removal edit)</td><td>0.52 &rarr; 0.50</td><td>0.63 &rarr; 0.55</td><td>-0.08 (p = 0.09)</td></tr>
-        <tr><td>Qwopus3.8-27B-Coder-Flash (code distillation)</td><td>0.50 &rarr; 0.48</td><td>0.60 &rarr; 0.53</td><td class="neg">-0.07 [-0.13, -0.02]</td></tr>
+        <tr><td>Sage-A1.5 (science fine-tune of Qwen3.6-35B-A3B)</td><td data-label="Knows">0.67 &rarr; 0.64</td><td data-label="Declines invented">0.67 &rarr; 0.48</td><td class="neg" data-label="Change">-0.19 [-0.28, -0.11]</td></tr>
+        <tr><td>Spark-X2.6-4B (point release of 2.5)</td><td data-label="Knows">0.15 &rarr; 0.15</td><td data-label="Declines invented">0.46 &rarr; 0.31</td><td class="neg" data-label="Change">-0.15 [-0.23, -0.08]</td></tr>
+        <tr><td>Arete-27B (values fine-tune of Qwen3.8-27B)</td><td data-label="Knows">0.50 &rarr; 0.50</td><td data-label="Declines invented">0.60 &rarr; 0.48</td><td class="neg" data-label="Change">-0.12 [-0.18, -0.06]</td></tr>
+        <tr><td>Qwen3.8-27B abliterated (refusal-removal edit)</td><td data-label="Knows">0.52 &rarr; 0.50</td><td data-label="Declines invented">0.63 &rarr; 0.55</td><td data-label="Change">-0.08 (p = 0.09)</td></tr>
+        <tr><td>Qwopus3.8-27B-Coder-Flash (code distillation)</td><td data-label="Knows">0.50 &rarr; 0.48</td><td data-label="Declines invented">0.60 &rarr; 0.53</td><td class="neg" data-label="Change">-0.07 [-0.13, -0.02]</td></tr>
       </tbody>
     </table></div>
     <p class="note">Short English factual questions, thinking off, the word UNKNOWN offered in the prompt. "Knows" means
