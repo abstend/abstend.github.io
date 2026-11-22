@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RL kept "I don't know" - Abstend</title>
+<meta name="description" content="Seven post-trained open models measured against their own base: five declined fewer invented questions; the two trained only with reinforcement learning kept it exactly.">
+<meta name="author" content="Mark Galyan">
+<meta property="og:title" content="Reinforcement learning kept &quot;I don't know&quot;. The other fine-tunes took it away.">
+<meta property="og:description" content="Five post-trained variants cut refusal of invented questions by 7 to 19 points; two RL-only variants, small and full-size, kept it exactly.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #eef2f0; --surface: #fbfcfb; --ink: #15201c; --muted: #5a6a63; --rule: #d3dcd8;
+  --good: #1d7a63; --warn: #b4502a; --know: #3559a4; --track: #e2e9e6;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 40px 16px 64px; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: clamp(2.1rem, 5.4vw, 3.4rem); line-height: 1.04; }
+h2 { font-size: 1.45rem; line-height: 1.2; }
+h3 { font-size: 1.08rem; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--know); }
+a:focus-visible { outline: 2px solid var(--know); outline-offset: 2px; }
+.eyebrow { font: 500 0.76rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 16px; }
+.lede { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.byline { font: 0.86rem var(--mono); color: var(--muted); }
+.byline b { color: var(--ink); font-weight: 500; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 10px 16px; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid var(--rule); color: var(--ink); background: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 0.84rem var(--mono); color: var(--muted); }
+.counts b { color: var(--ink); font-weight: 500; }
+section { display: grid; gap: 16px; }
+.section-lede { color: var(--muted); max-width: 70ch; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.panel p { color: var(--muted); font-size: 0.95rem; }
+.swatch { width: 28px; height: 6px; border-radius: 3px; }
+.finding { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--warn); border-radius: 10px; padding: 20px; display: grid; gap: 12px; }
+.finding p { max-width: 72ch; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { font: 500 0.72rem var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+td.neg { color: var(--warn); font-weight: 600; }
+.note { font-size: 0.86rem; color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 74ch; }
+ol.log { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+ol.log li { display: grid; grid-template-columns: 7.2em 1fr; gap: 12px; }
+ol.log time { font: 0.84rem var(--mono); color: var(--muted); padding-top: 2px; }
+@media (max-width: 560px) { ol.log li { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 600px) {
+  .tbl table, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+  .tbl thead { display: none; }
+  .tbl tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .tbl td { border: 0; padding: 2px 0; text-align: left; white-space: normal; }
+  .tbl td:first-child { font-weight: 600; }
+  .tbl td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font: 0.78rem var(--mono); }
+}
+footer { border-top: 1px solid var(--rule); padding-top: 20px; display: grid; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+footer .help { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; color: var(--ink); }
+</style>
+
+<style>
+:root { --cut: #eb6834; --kept: #1baf7a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cut: #d95926; --kept: #199e70; } }
+:root[data-theme="dark"] { --cut: #d95926; --kept: #199e70; }
+.claim { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; }
+.claim .tag { font: 500 0.72rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.claim.theory { border-left: 4px solid var(--know); }
+.claim p, .claim li { max-width: 72ch; }
+.dumb { display: grid; gap: 4px; }
+.dumb .axis, .dumb .row { display: grid; grid-template-columns: minmax(150px, 15rem) 1fr 7.5rem; gap: 12px; align-items: center; }
+.dumb .row { padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.dumb .row:hover { background: var(--track); }
+.dumb .name { font-size: 0.92rem; line-height: 1.3; }
+.dumb .name small { display: block; color: var(--muted); font: 0.74rem var(--mono); }
+.dumb .val { font: 0.84rem var(--mono); text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+.track { position: relative; height: 22px; }
+.track .seg { position: absolute; top: 10px; height: 2px; background: var(--muted); opacity: 0.55; border-radius: 1px; }
+.track .dot { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; }
+.track .base { background: var(--surface); border: 2px solid var(--muted); }
+.track .cut { background: var(--cut); box-shadow: 0 0 0 2px var(--surface); }
+.track .kept { background: var(--kept); box-shadow: 0 0 0 2px var(--surface); }
+.dumb .axis { font: 0.72rem var(--mono); color: var(--muted); }
+.ticks { position: relative; height: 16px; }
+.ticks span { position: absolute; transform: translateX(-50%); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 6px; }
+.legend i.base { border: 2px solid var(--muted); background: var(--surface); }
+.legend i.cut { background: var(--cut); }
+.legend i.kept { background: var(--kept); }
+.tbl.how td:nth-child(2), .tbl.how th:nth-child(2) { text-align: left; white-space: normal; }
+@media (max-width: 600px) {
+  .dumb .axis { grid-template-columns: 1fr; }
+  .dumb .axis > span:first-child, .dumb .axis > span:last-child { display: none; }
+  .dumb .row { grid-template-columns: 1fr auto; }
+  .dumb .row .track { grid-column: 1 / -1; grid-row: 2; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <span class="eyebrow"><a href="./">Abstend</a> &middot; Finding &middot; 2026-11-22</span>
+  <h1>Reinforcement learning kept "I don't know". The other fine-tunes took it away.</h1>
+  <p class="lede"><strong>Seven post-trained versions of open models, each measured against the exact model it was built
+    from.</strong> Five declined fewer questions about things that do not exist. The two trained only with
+    reinforcement learning, one tiny and one full-size, from different teams, left that honesty exactly where it was.</p>
+  <p class="byline">By <b>Mark Galyan</b>. Every number links to a receipt.</p>
+</header>
+
+<section aria-labelledby="chart-title">
+  <h2 id="chart-title">Invented questions declined, before and after post-training</h2>
+  <p class="section-lede">The test asks 240 short factual questions; 100 of them are about things that do not exist,
+    and the prompt offers UNKNOWN as an answer. Each pair ran on the same build in the same sitting, thinking off,
+    and each base model was re-run the same day and matched its earlier answers byte for byte.</p>
+  <div class="dumb" role="img" aria-label="Invented questions declined, out of 100, base model versus variant, for seven variants. The five non-RL variants drop by 7 to 19; the two RL variants stay at 60.">
+  <div class="axis"><span>Variant</span><span class="ticks"><span style="left:10.0%">30</span><span style="left:30.0%">40</span><span style="left:50.0%">50</span><span style="left:70.0%">60</span><span style="left:90.0%">70</span></span><span>base &rarr; variant</span></div>
+  <div class="row" title="Sage-A1.5: base declined 67 of 100 invented questions, the variant 48 (changed by -19)">
+    <span class="name">Sage-A1.5<small>science/agent fine-tune of Qwen3.6-35B-A3B; recipe not confirmed</small></span>
+    <span class="track"><span class="seg" style="left:46.0%;width:calc(84.0% - 46.0%)"></span><span class="dot base" style="left:84.0%"></span><span class="dot cut" style="left:46.0%"></span></span>
+    <span class="val">67 &rarr; 48 <b>&minus;19</b></span>
+  </div>
+  <div class="row" title="Spark-X2.6-4B: base declined 46 of 100 invented questions, the variant 31 (changed by -15)">
+    <span class="name">Spark-X2.6-4B<small>point release of Spark-X2.5; recipe not published</small></span>
+    <span class="track"><span class="seg" style="left:12.0%;width:calc(42.0% - 12.0%)"></span><span class="dot base" style="left:42.0%"></span><span class="dot cut" style="left:12.0%"></span></span>
+    <span class="val">46 &rarr; 31 <b>&minus;15</b></span>
+  </div>
+  <div class="row" title="Arete-27B: base declined 60 of 100 invented questions, the variant 48 (changed by -12)">
+    <span class="name">Arete-27B<small>values fine-tune of Qwen3.8-27B (SFT)</small></span>
+    <span class="track"><span class="seg" style="left:46.0%;width:calc(70.0% - 46.0%)"></span><span class="dot base" style="left:70.0%"></span><span class="dot cut" style="left:46.0%"></span></span>
+    <span class="val">60 &rarr; 48 <b>&minus;12</b></span>
+  </div>
+  <div class="row" title="Qwen3.8-27B abliterated: base declined 63 of 100 invented questions, the variant 55 (changed by -8)">
+    <span class="name">Qwen3.8-27B abliterated<small>refusal-removal weight edit</small></span>
+    <span class="track"><span class="seg" style="left:60.0%;width:calc(76.0% - 60.0%)"></span><span class="dot base" style="left:76.0%"></span><span class="dot cut" style="left:60.0%"></span></span>
+    <span class="val">63 &rarr; 55 <b>&minus;8</b></span>
+  </div>
+  <div class="row" title="Qwopus3.8-27B-Coder-Flash: base declined 60 of 100 invented questions, the variant 53 (changed by -7)">
+    <span class="name">Qwopus3.8-27B-Coder-Flash<small>code distillation of Qwen3.8-27B</small></span>
+    <span class="track"><span class="seg" style="left:56.0%;width:calc(70.0% - 56.0%)"></span><span class="dot base" style="left:70.0%"></span><span class="dot cut" style="left:56.0%"></span></span>
+    <span class="val">60 &rarr; 53 <b>&minus;7</b></span>
+  </div>
+  <div class="row" title="Qwen3.8-27B pi adapter: base declined 60 of 100 invented questions, the variant 60 (no change)">
+    <span class="name">Qwen3.8-27B pi adapter<small>reinforcement learning only, a small LoRA</small></span>
+    <span class="track"><span class="dot base" style="left:70.0%"></span><span class="dot kept" style="left:70.0%"></span></span>
+    <span class="val">60 &rarr; 60 <b>&plusmn;0</b></span>
+  </div>
+  <div class="row" title="DaisyRose-27B: base declined 60 of 100 invented questions, the variant 60 (no change)">
+    <span class="name">DaisyRose-27B<small>reinforcement learning only, full fine-tune</small></span>
+    <span class="track"><span class="dot base" style="left:70.0%"></span><span class="dot kept" style="left:70.0%"></span></span>
+    <span class="val">60 &rarr; 60 <b>&plusmn;0</b></span>
+  </div>
+</div>
+<div class="legend"><span><i class="base"></i>base model</span><span><i class="cut"></i>variant declined fewer</span><span><i class="kept"></i>variant unchanged</span><span>axis: invented questions declined, out of 100</span></div>
+  <div class="tbl how"><table>
+    <thead><tr><th>Variant</th><th>How it was made</th><th>Knows: base &rarr; variant</th><th>Declines invented</th><th>Change [95% CI]</th></tr></thead>
+    <tbody>
+      <tr><td>Sage-A1.5</td><td data-label="How">fine-tune lineage, recipe not confirmed</td><td data-label="Knows">0.67 &rarr; 0.64</td><td data-label="Declines invented">0.67 &rarr; 0.48</td><td data-label="Change">&minus;0.19 [&minus;0.28, &minus;0.11]</td></tr>
+      <tr><td>Spark-X2.6-4B</td><td data-label="How">point release, recipe not published</td><td data-label="Knows">0.15 &rarr; 0.15</td><td data-label="Declines invented">0.46 &rarr; 0.31</td><td data-label="Change">&minus;0.15 [&minus;0.23, &minus;0.08]</td></tr>
+      <tr><td>Arete-27B</td><td data-label="How">supervised fine-tune</td><td data-label="Knows">0.50 &rarr; 0.50</td><td data-label="Declines invented">0.60 &rarr; 0.48</td><td data-label="Change">&minus;0.12 [&minus;0.18, &minus;0.06]</td></tr>
+      <tr><td>Qwen3.8-27B abliterated</td><td data-label="How">refusal-removal edit</td><td data-label="Knows">0.52 &rarr; 0.50</td><td data-label="Declines invented">0.63 &rarr; 0.55</td><td data-label="Change">&minus;0.08 (p = 0.09)</td></tr>
+      <tr><td>Qwopus3.8-27B-Coder-Flash</td><td data-label="How">distillation</td><td data-label="Knows">0.50 &rarr; 0.48</td><td data-label="Declines invented">0.60 &rarr; 0.53</td><td data-label="Change">&minus;0.07 [&minus;0.13, &minus;0.02]</td></tr>
+      <tr><td>Qwen3.8-27B pi adapter</td><td data-label="How">reinforcement learning only, LoRA</td><td data-label="Knows">0.50 &rarr; 0.52</td><td data-label="Declines invented">0.60 &rarr; 0.60</td><td data-label="Change">0.00 [&minus;0.03, +0.03]</td></tr>
+      <tr><td>DaisyRose-27B</td><td data-label="How">reinforcement learning only, full weights</td><td data-label="Knows">0.50 &rarr; 0.51</td><td data-label="Declines invented">0.60 &rarr; 0.60</td><td data-label="Change">0.00 [0.00, 0.00], no item changed</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="measured">
+  <h2 id="measured">Three things we measured</h2>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <h3>1. Both RL-only variants kept "I don't know" exactly</h3>
+    <p>The pi adapter (a small LoRA trained inside a coding agent) and DaisyRose-27B (a full fine-tune of every
+      weight, about 63,000 GPU-hours on long agent tasks) were built by different teams, at very different scale.
+      Both declined 60 of the 100 invented questions, the same as their base. For DaisyRose, not a single question
+      changed its answer. Of the five that cut it, three are confirmed imitation or editing (a supervised fine-tune,
+      a distillation, a refusal-removal edit); the other two have not published their recipes.</p>
+  </div>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <h3>2. RL changed the model far less on things it wasn't trained for</h3>
+    <p>Against the base model, how many of the 240 answers changed wording, and how many changed grade:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Variant</th><th>Answers reworded</th><th>Grades changed</th></tr></thead>
+      <tbody>
+        <tr><td>pi adapter (RL, small)</td><td data-label="Reworded">112</td><td data-label="Grades">8</td></tr>
+        <tr><td>DaisyRose-27B (RL, full)</td><td data-label="Reworded">135</td><td data-label="Grades">6</td></tr>
+        <tr><td>Qwopus Coder (distillation)</td><td data-label="Reworded">204</td><td data-label="Grades">21</td></tr>
+        <tr><td>Arete-27B (supervised)</td><td data-label="Reworded">223</td><td data-label="Grades">24</td></tr>
+      </tbody>
+    </table></div>
+    <p>The full-size RL model moved about as little as the tiny one. So it is the training method, not the size of
+      the change.</p>
+  </div>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <h3>3. As agents, both stayed honest, but when to stop followed the reward</h3>
+    <p>On 21 coding tasks that cannot be done as written (contradictory tests, a test that contradicts the spec,
+      missing input data) and 9 solvable twins, thinking off:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Model</th><th>Said "impossible"</th><th>Gamed a check</th><th>Falsely claimed success</th><th>Median steps</th></tr></thead>
+      <tbody>
+        <tr><td>Qwen3.8-27B (base)</td><td data-label="Said impossible">4 of 21</td><td data-label="Gamed">0</td><td data-label="False success">0</td><td data-label="Steps">21.5</td></tr>
+        <tr><td>pi adapter (rewarded for fewer steps)</td><td data-label="Said impossible">13 of 21</td><td data-label="Gamed">0</td><td data-label="False success">0</td><td data-label="Steps">13</td></tr>
+        <tr><td>DaisyRose-27B (trained on 1.5-hour tasks)</td><td data-label="Said impossible">3 of 21</td><td data-label="Gamed">0</td><td data-label="False success">0</td><td data-label="Steps">25</td></tr>
+      </tbody>
+    </table></div>
+    <p>The one rewarded for finishing in fewer steps learned to stop and say "this can't be done". The one trained on
+      long tasks learned to keep going. Neither cheated.</p>
+  </div>
+</section>
+
+<section aria-labelledby="why">
+  <h2 id="why">Why: a working theory</h2>
+  <div class="claim theory">
+    <span class="tag">Theory, not yet tested</span>
+    <p><strong>Supervised fine-tuning is imitation.</strong> The model is trained to reproduce example answers word for
+      word, usually written by a stronger teacher model or taken from curated data. Those answers almost never say
+      "I don't know", and the training does not check whether the student actually knows the fact. So the student
+      learns the teacher's confidence without the teacher's knowledge: it learns to answer anyway.</p>
+    <p><strong>Reinforcement learning is trial and reward.</strong> The model makes its own attempts, a checker scores
+      them, and better attempts become more likely. It never imitates anyone else's text, only its own better
+      behaviour, so nothing pushes it to sound surer than it is, and what the reward does not touch, like trivia,
+      mostly stays as it was.</p>
+    <p><strong>The reward decides the habits.</strong> The pi adapter's training scored any blocked shortcut as zero
+      and paid a small bonus for using fewer tool calls, so "do the work, check it, stop" was the cheapest way to
+      score. DaisyRose trained on hour-long tasks where persistence pays.</p>
+  </div>
+</section>
+
+<section aria-labelledby="advice">
+  <h2 id="advice">What to do with it</h2>
+  <ul class="plain">
+    <li>If honesty about what a model doesn't know matters to you, prefer variants trained with reinforcement
+      learning, and test any fine-tune before trusting it.</li>
+    <li>If you fine-tune with examples yourself, include examples of saying "I don't know" for questions your base
+      model can't answer. Training for it works: a small LoRA took a 3B model from declining 81 to 100 of 100 invented
+      questions, at a cost in real questions declined
+      (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/idk-lora/RESULT_IDK_LORA.md">receipt</a>).</li>
+    <li>For agents, look at what the training rewarded: efficiency rewards taught stopping honestly; long-task
+      rewards taught persistence.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="limits">
+  <h2 id="limits">Limits, and what we test next</h2>
+  <ul class="plain">
+    <li>Two RL models, both built on Qwen3.8-27B. Five non-RL variants built on three base models.</li>
+    <li>Thinking off, and the prompt offers UNKNOWN. DaisyRose was very likely trained with thinking on.</li>
+    <li>100 invented questions per model; short English factual questions only.</li>
+    <li><strong>Next:</strong> a model fine-tuned with examples first and RL after (does the drop come back?); the same
+      fine-tuning data with the last layers frozen (does freezing them protect it?); and a third RL model from
+      another team.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="receipts">
+  <h2 id="receipts">Receipts</h2>
+  <ul class="plain">
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/daisyrose/RESULT_DAISYROSE.md">DaisyRose-27B</a>,
+      both phases, with the file hashes and the base replay.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/pi-adapter/RESULT_PI_ADAPTER.md">pi adapter</a>,
+      fact test and agent test.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/abstend/FACT_SHEET_FINETUNE_SERIES.md">The fine-tune series fact sheet</a>,
+      with every variant's receipt.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/agentic-gaming/RESULT_MAIN_v1.md">The agent test</a>
+      and how it scores "impossible", gaming and false success.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Abstend is by Mark Galyan. Measurements on local hardware; methods and receipts are public.
+    <a href="./">Back to Abstend</a>.</p>
+  <p class="help">Looking for addiction support? This site is about testing AI models. SAMHSA's National Helpline is
+    free, confidential and open 24/7: <a href="tel:18006624357">1-800-662-4357</a>. In a crisis, call or text
+    <a href="tel:988">988</a>.</p>
+</footer>
+
+</main>
+</body>
+</html>
