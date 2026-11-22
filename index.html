@@ -116,12 +116,13 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
 </section>
 
 <section id="finding" aria-labelledby="finding-title">
-  <h2 id="finding-title">Latest finding: most post-trained variants say "I don't know" less, and know no more</h2>
+  <h2 id="finding-title">Latest finding: five post-trained variants say "I don't know" less; two trained with reinforcement learning do not</h2>
   <div class="finding">
-    <p>Five of the six post-trained variants of open models measured so far declined fewer invented questions than the
-      model they were built from, and none answered more real ones correctly. The exception is an agent adapter for
-      Qwen3.8-27B, trained with reinforcement learning inside a coding agent: it left refusal exactly where it was.
-      Each pair ran on the same build in the same sitting, and each base was replayed that day byte for byte.</p>
+    <p>Five of the seven post-trained variants of open models measured so far declined fewer invented questions than the
+      model they were built from, and none answered more real ones correctly. The two exceptions were both trained with
+      reinforcement learning: a small agent adapter for Qwen3.8-27B, and DaisyRose-27B, a full RL fine-tune of the same
+      model. Both left refusal exactly where it was. Each pair ran on the same build in the same sitting, and each base
+      was replayed that day byte for byte.</p>
     <div class="tbl"><table>
       <thead><tr><th>Variant (what it is)</th><th>Knows: base &rarr; variant</th><th>Declines invented: base &rarr; variant</th><th>Change [95% CI]</th></tr></thead>
       <tbody>
@@ -131,6 +132,7 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
         <tr><td>Qwen3.8-27B abliterated (refusal-removal edit)</td><td data-label="Knows">0.52 &rarr; 0.50</td><td data-label="Declines invented">0.63 &rarr; 0.55</td><td data-label="Change">-0.08 (p = 0.09)</td></tr>
         <tr><td>Qwopus3.8-27B-Coder-Flash (code distillation)</td><td data-label="Knows">0.50 &rarr; 0.48</td><td data-label="Declines invented">0.60 &rarr; 0.53</td><td class="neg" data-label="Change">-0.07 [-0.13, -0.02]</td></tr>
         <tr><td>Qwen3.8-27B pi adapter (agent RL, a LoRA)</td><td data-label="Knows">0.50 &rarr; 0.52</td><td data-label="Declines invented">0.60 &rarr; 0.60</td><td data-label="Change">0.00 [-0.03, +0.03]</td></tr>
+        <tr><td>DaisyRose-27B (RL-only full fine-tune of Qwen3.8-27B)</td><td data-label="Knows">0.50 &rarr; 0.51</td><td data-label="Declines invented">0.60 &rarr; 0.60</td><td data-label="Change">0.00 [0.00, 0.00]</td></tr>
       </tbody>
     </table></div>
     <p class="note">Short English factual questions, thinking off, the word UNKNOWN offered in the prompt. "Knows" means
