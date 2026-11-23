@@ -230,6 +230,9 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
     </table></div>
     <p>The one rewarded for finishing in fewer steps learned to stop and say "this can't be done". The one trained on
       long tasks learned to keep going. Neither cheated.</p>
+    <p>The pi adapter's habit carried over to a different agent. In Hermes, an assistant working a test mailbox and
+      calendar, it asked which one you meant on 19 of 30 ambiguous requests, where the base asked on 13, and it passed
+      62 of 83 tasks against 56. With thinking on, that edge disappeared: both passed 56, and both guessed more often.</p>
   </div>
 </section>
 
@@ -269,7 +272,8 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
   <h2 id="limits">Limits, and what we test next</h2>
   <ul class="plain">
     <li>Two RL models, both built on Qwen3.8-27B. Five non-RL variants built on three base models.</li>
-    <li>Thinking off, and the prompt offers UNKNOWN. DaisyRose was very likely trained with thinking on.</li>
+    <li>Thinking off, and the prompt offers UNKNOWN. DaisyRose was very likely trained with thinking on. The pi
+      adapter's extra carefulness in Hermes shows with thinking off only.</li>
     <li>100 invented questions per model; short English factual questions only.</li>
     <li><strong>Next:</strong> a model fine-tuned with examples first and RL after (does the drop come back?); the same
       fine-tuning data with the last layers frozen (does freezing them protect it?); and a third RL model from
@@ -284,6 +288,8 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
       both phases, with the file hashes and the base replay.</li>
     <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/pi-adapter/RESULT_PI_ADAPTER.md">pi adapter</a>,
       fact test and agent test.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/pi-hermes/RESULT_PI_HERMES.md">The pi adapter in Hermes</a>,
+      thinking off and on.</li>
     <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/abstend/FACT_SHEET_FINETUNE_SERIES.md">The fine-tune series fact sheet</a>,
       with every variant's receipt.</li>
     <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/agentic-gaming/RESULT_MAIN_v1.md">The agent test</a>
