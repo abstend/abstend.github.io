@@ -246,7 +246,7 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
       learns the teacher's confidence without the teacher's knowledge: it learns to answer anyway.</p>
     <p><strong>One part of this is measured.</strong> We trained a small model on its own correct answers to questions
       it already knew, with no "I don't know" anywhere in the data. It went from declining 81 of 100 invented questions
-      to 20. No teacher was involved, so answers that never say "I don't know" are enough to cause the drop
+      to 20, and at two other training seeds to 3 and 0. No teacher was involved, so answers that never say "I don't know" are enough to cause the drop
       (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/idk-lora/RESULT_IDK_LORA.md">receipt</a>,
       the control arm).</p>
     <p><strong>Reinforcement learning is trial and reward.</strong> The model makes its own attempts, a checker scores
@@ -280,9 +280,10 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
     <li>Thinking off, and the prompt offers UNKNOWN. DaisyRose was very likely trained with thinking on. The pi
       adapter's extra carefulness in Hermes shows with thinking off only.</li>
     <li>100 invented questions per model; short English factual questions only.</li>
-    <li><strong>Next:</strong> a model fine-tuned with examples first and RL after (does the drop come back?); the same
-      fine-tuning data with the last layers frozen (does freezing them protect it?); and a third RL model from
-      another team.</li>
+    <li><strong>Done:</strong> keeping the training off the last layers did not protect it
+      (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/frozen-layers/RESULT_FROZEN_LAYERS.md">receipt</a>).</li>
+    <li><strong>Next:</strong> a model fine-tuned with examples first and RL after (does the drop come back?), and a third
+      RL model from another team.</li>
   </ul>
 </section>
 
