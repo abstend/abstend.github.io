@@ -239,11 +239,16 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
 <section aria-labelledby="why">
   <h2 id="why">Why: a working theory</h2>
   <div class="claim theory">
-    <span class="tag">Theory, not yet tested</span>
+    <span class="tag">Theory, partly tested</span>
     <p><strong>Supervised fine-tuning is imitation.</strong> The model is trained to reproduce example answers word for
       word, usually written by a stronger teacher model or taken from curated data. Those answers almost never say
       "I don't know", and the training does not check whether the student actually knows the fact. So the student
       learns the teacher's confidence without the teacher's knowledge: it learns to answer anyway.</p>
+    <p><strong>One part of this is measured.</strong> We trained a small model on its own correct answers to questions
+      it already knew, with no "I don't know" anywhere in the data. It went from declining 81 of 100 invented questions
+      to 20. No teacher was involved, so answers that never say "I don't know" are enough to cause the drop
+      (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/idk-lora/RESULT_IDK_LORA.md">receipt</a>,
+      the control arm).</p>
     <p><strong>Reinforcement learning is trial and reward.</strong> The model makes its own attempts, a checker scores
       them, and better attempts become more likely. It never imitates anyone else's text, only its own better
       behaviour, so nothing pushes it to sound surer than it is, and what the reward does not touch, like trivia,
