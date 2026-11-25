@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Looped models - Abstend</title>
+<meta name="description" content="Looped transformers reuse some layers several times per token. We measured two, and turned one model's loop count like a dial: more depth moved caution, not knowledge.">
+<meta name="author" content="Mark Galyan">
+<meta property="og:title" content="Looped models think more per weight. They don't know more.">
+<meta property="og:description" content="SenseNova-Loop-9B at 1, 2 and 3 loops, Inkling-2-Mini against Qwen3.8-27B: the loop count works like a caution dial, and reasoning is still the bigger lever.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #eef2f0; --surface: #fbfcfb; --ink: #15201c; --muted: #5a6a63; --rule: #d3dcd8;
+  --good: #1d7a63; --warn: #b4502a; --know: #3559a4; --track: #e2e9e6;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e3ebe7; --muted: #94a59d; --rule: #283330;
+  --good: #4fbf9f; --warn: #e88a62; --know: #86a4ea; --track: #222c29; color-scheme: dark }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 40px 16px 64px; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: clamp(2.1rem, 5.4vw, 3.4rem); line-height: 1.04; }
+h2 { font-size: 1.45rem; line-height: 1.2; }
+h3 { font-size: 1.08rem; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--know); }
+a:focus-visible { outline: 2px solid var(--know); outline-offset: 2px; }
+.eyebrow { font: 500 0.76rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 16px; }
+.lede { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.byline { font: 0.86rem var(--mono); color: var(--muted); }
+.byline b { color: var(--ink); font-weight: 500; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 10px 16px; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid var(--rule); color: var(--ink); background: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 0.84rem var(--mono); color: var(--muted); }
+.counts b { color: var(--ink); font-weight: 500; }
+section { display: grid; gap: 16px; }
+.section-lede { color: var(--muted); max-width: 70ch; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.panel p { color: var(--muted); font-size: 0.95rem; }
+.swatch { width: 28px; height: 6px; border-radius: 3px; }
+.finding { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--warn); border-radius: 10px; padding: 20px; display: grid; gap: 12px; }
+.finding p { max-width: 72ch; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { font: 500 0.72rem var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+td.neg { color: var(--warn); font-weight: 600; }
+.note { font-size: 0.86rem; color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 74ch; }
+ol.log { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+ol.log li { display: grid; grid-template-columns: 7.2em 1fr; gap: 12px; }
+ol.log time { font: 0.84rem var(--mono); color: var(--muted); padding-top: 2px; }
+@media (max-width: 560px) { ol.log li { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 600px) {
+  .tbl table, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+  .tbl thead { display: none; }
+  .tbl tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .tbl td { border: 0; padding: 2px 0; text-align: left; white-space: normal; }
+  .tbl td:first-child { font-weight: 600; }
+  .tbl td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font: 0.78rem var(--mono); }
+}
+footer { border-top: 1px solid var(--rule); padding-top: 20px; display: grid; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+footer .help { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; color: var(--ink); }
+</style>
+
+<style>
+:root { --decl: #1baf7a; --fact: #3559a4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --decl: #199e70; --fact: #86a4ea; } }
+:root[data-theme="dark"] { --decl: #199e70; --fact: #86a4ea; }
+.claim { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; }
+.claim .tag { font: 500 0.72rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.claim.theory { border-left: 4px solid var(--know); }
+.claim p, .claim li { max-width: 72ch; }
+.bars { display: grid; gap: 10px; }
+.bars .grp { display: grid; grid-template-columns: 7.5rem 1fr; gap: 6px 14px; align-items: center; }
+.bars .lbl { font: 500 0.86rem var(--mono); }
+.bars .lbl small { display: block; color: var(--muted); font-size: 0.74rem; font-weight: 400; }
+.bars .pair { display: grid; gap: 4px; }
+.bars .bar { position: relative; height: 18px; background: var(--track); border-radius: 4px; }
+.bars .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.bars .fill.decl { background: var(--decl); }
+.bars .fill.fact { background: var(--fact); }
+.bars .num { position: absolute; right: 6px; top: 0; font: 0.76rem/18px var(--mono); color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.legend i.decl { background: var(--decl); } .legend i.fact { background: var(--fact); }
+@media (max-width: 560px) { .bars .grp { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <span class="eyebrow"><a href="./">Abstend</a> &middot; Finding &middot; 2026-11-25</span>
+  <h1>Looped models think more per weight. They don't know more.</h1>
+  <p class="lede"><strong>Three looped models launched within a month.</strong> A looped model runs some of its layers more
+    than once per token, with the same weights, so it does more computation without storing more. We measured two of them
+    on our factual test, and turned one model's loop count like a dial. Extra depth moved caution, not knowledge.</p>
+  <p class="byline">By <b>Mark Galyan</b>. Every number links to a receipt.</p>
+</header>
+
+<section aria-labelledby="test">
+  <h2 id="test">The test</h2>
+  <p class="section-lede">240 short factual questions: 40 easy, 100 hard, and 100 about things that do not exist, with
+    UNKNOWN offered as an answer. Greedy decoding, the same build and machine for every pair compared. "Declined" means the
+    model answered UNKNOWN; "made up" means it answered a question about something that does not exist.</p>
+</section>
+
+<section aria-labelledby="dial">
+  <h2 id="dial">1. Turning the dial: one model at 1, 2 and 3 loops</h2>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <p>SenseNova-Loop-9B was trained to run its middle 24 layers twice. We rewrote only the loop count in the model file,
+      checked each version against SenseTime's own code (within 0.3 % on Wikipedia perplexity), and asked the same 240
+      questions at each setting.</p>
+    <div class="legend"><span><i class="decl"></i>invented questions declined (of 100)</span><span><i class="fact"></i>hard facts right (of 100)</span></div>
+<div class="bars" role="img" aria-label="Invented questions declined and hard facts right, out of 100, at 1, 2 and 3 loops: 58 and 3, 53 and 14, 67 and 9.">
+  <div class="grp"><span class="lbl">1 loop<small>34.9 tok/s</small></span><div class="pair"><div class="bar"><div class="fill decl" style="width:58%"></div><span class="num">58 declined</span></div><div class="bar"><div class="fill fact" style="width:3%"></div><span class="num">3 right</span></div></div></div>
+  <div class="grp"><span class="lbl">2 loops<small>trained &middot; 19.0 tok/s</small></span><div class="pair"><div class="bar"><div class="fill decl" style="width:53%"></div><span class="num">53 declined</span></div><div class="bar"><div class="fill fact" style="width:14%"></div><span class="num">14 right</span></div></div></div>
+  <div class="grp"><span class="lbl">3 loops<small>13.4 tok/s</small></span><div class="pair"><div class="bar"><div class="fill decl" style="width:67%"></div><span class="num">67 declined</span></div><div class="bar"><div class="fill fact" style="width:9%"></div><span class="num">9 right</span></div></div></div>
+</div>
+    <p>A third loop declined 14 more invented questions, with answers no longer than before: the extra thinking happened
+      inside the network, not on the page. But it also got 5 fewer hard facts right, and ran 30 % slower. One loop broke
+      the model outright (8 of 40 easy questions right, against 27).
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/loopcount/RESULT_LOOP_DIAL.md">Receipt</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="sensenova">
+  <h2 id="sensenova">2. A looped model built from an ordinary one</h2>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <p>SenseNova-Loop-9B is Qwen3.5-9B underneath: every layer's weights still match Qwen's (cosine 0.97; unrelated layers
+      score 0.00), and its vision part is identical. Then it was retrained hard, moving the median weight by a quarter of
+      its size. Against Qwen3.5-9B on the same machine:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Model</th><th>Invented declined</th><th>Hard right</th><th>Easy right</th></tr></thead>
+      <tbody>
+        <tr><td>Qwen3.5-9B</td><td data-label="Invented declined">65</td><td data-label="Hard right">42</td><td data-label="Easy right">36 / 40</td></tr>
+        <tr><td>SenseNova-Loop-9B (2 loops)</td><td data-label="Invented declined">53</td><td data-label="Hard right">14</td><td data-label="Easy right">27 / 40</td></tr>
+      </tbody>
+    </table></div>
+    <p>A third of the hard facts. Its Wikipedia perplexity is twice Qwen's, and SenseTime's own code confirms it, so this
+      is the model, not our setup. Its card puts it level with Qwen3.8-27B on several agent benchmarks: strong at tasks, weak at
+      trivia. <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/RESULT_SENSENOVA_LOOP.md">Receipt</a>,
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/lineage/SUMMARY.md">weight comparison</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="inkling">
+  <h2 id="inkling">3. Inkling-2-Mini against Qwen3.8-27B</h2>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <p>Inkling-2-Mini (26B mixture-of-experts, middle layers run three times) cannot switch its reasoning off; its lowest
+      setting still thinks briefly. So we ran Qwen3.8-27B both ways, on the same two-GPU machine and build:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Model</th><th>Invented declined</th><th>Invented made up</th><th>Hard right</th><th>Decode speed</th></tr></thead>
+      <tbody>
+        <tr><td>Qwen3.8-27B, thinking off</td><td data-label="Invented declined">59</td><td data-label="Invented made up">39</td><td data-label="Hard right">48</td><td data-label="Decode speed">10.8 tok/s</td></tr>
+        <tr><td>Qwen3.8-27B, brief thinking</td><td data-label="Invented declined">88</td><td data-label="Invented made up">12</td><td data-label="Hard right">44</td><td data-label="Decode speed">10.8 tok/s</td></tr>
+        <tr><td>Inkling-2-Mini, lowest setting</td><td data-label="Invented declined">78</td><td data-label="Invented made up">6</td><td data-label="Hard right">33</td><td data-label="Decode speed">15.6 tok/s</td></tr>
+      </tbody>
+    </table></div>
+    <p>Its card warns that it states wrong things with confidence more than larger models. On invented questions it made
+      up the fewest answers of the three. But matched for reasoning, Qwen declined more and knew more: Inkling's caution
+      came mostly from its reasoning. It is faster per token; its slowest answers were reasoning loops that never ended
+      under greedy decoding (22 of 240). <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/inkling-mini/RESULT_INKLING_MINI.md">Receipt</a>,
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/inkling-mini/RESULT_Q27_LOW.md">matched run</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="adds">
+  <h2 id="adds">What it adds up to</h2>
+  <div class="claim theory">
+    <span class="tag">Reading</span>
+    <p><strong>Loops buy computation, not stored facts.</strong> Facts live in the weights; reading the same weights twice
+      does not add any. Both looped models know less than comparable ordinary models, and GLM-5.4's own published
+      comparison of a looped and an unlooped 30B model (<a href="https://z.ai/blog/glm-5.4">their blog</a>) gained most on math and science reasoning (+11 and +9 points) and
+      little on the knowledge-heavy MMLU-Pro (+3).</p>
+    <p><strong>The loop count can work like a caution dial,</strong> moving "I don't know" without spending extra words. On
+      the one model we could turn, that caution was not free: it also cost facts.</p>
+    <p><strong>Reasoning is still the bigger lever.</strong> About 200 tokens of thinking moved Qwen3.8-27B from 59 to
+      88 invented questions declined, at almost no cost in facts.</p>
+  </div>
+</section>
+
+<section aria-labelledby="local">
+  <h2 id="local">If you run them locally</h2>
+  <ul class="plain">
+    <li>llama.cpp (mainline, 24 November) splits Inkling-2-Mini across GPUs by loop slots (48) rather than stored layers (24), so an even split
+      puts every layer on the first card. On two cards, <code>-ts 1,3</code> balances it.</li>
+    <li>Inkling's lowest setting still reasons, and greedy decoding can trap that reasoning in a loop; its makers sample
+      at temperature 1.0.</li>
+    <li>SenseNova support was still an open pull request; one of its commits reuses the first pass's cache on the second
+      pass, unlike SenseTime's code, and changed 209 of 240 answers.</li>
+    <li>Extra passes cost speed on bandwidth-limited cards: each pass re-reads those layers' weights.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="limits">
+  <h2 id="limits">Limits</h2>
+  <ul class="plain">
+    <li>Two looped models, one test of short factual English questions, greedy decoding.</li>
+    <li>SenseNova was trained at 2 loops, so 1 and 3 are outside what it learned.</li>
+    <li>Inkling's lowest setting and Qwen's "brief thinking" are not the same instruction.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="receipts">
+  <h2 id="receipts">Receipts</h2>
+  <ul class="plain">
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/loopcount/RESULT_LOOP_DIAL.md">The loop dial</a>, with the file rewriter and the reference check.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/RESULT_SENSENOVA_LOOP.md">SenseNova-Loop-9B against Qwen3.5-9B</a>, and its <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/sensenova-loop/lineage/SUMMARY.md">weight comparison</a>.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/inkling-mini/RESULT_INKLING_MINI.md">Inkling-2-Mini</a> and the <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/inkling-mini/RESULT_Q27_LOW.md">matched Qwen3.8-27B run</a>.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Abstend is by Mark Galyan. Measurements on local hardware; methods and receipts are public.
+    <a href="./">Back to Abstend</a>.</p>
+  <p class="help">Looking for addiction support? This site is about testing AI models. SAMHSA's National Helpline is
+    free, confidential and open 24/7: <a href="tel:18006624357">1-800-662-4357</a>. In a crisis, call or text
+    <a href="tel:988">988</a>.</p>
+</footer>
+</main>
+</body>
+</html>
