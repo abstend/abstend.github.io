@@ -189,7 +189,7 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
 </section>
 
 <section aria-labelledby="measured">
-  <h2 id="measured">Three things we measured</h2>
+  <h2 id="measured">Four things we measured</h2>
   <div class="claim">
     <span class="tag">Measured</span>
     <h3>1. Both RL-only variants kept "I don't know" exactly</h3>
@@ -234,6 +234,25 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
       calendar, it asked which one you meant on 19 of 30 ambiguous requests, where the base asked on 13, and it passed
       62 of 83 tasks against 56. With thinking on, that edge disappeared: both passed 56, and both guessed more often.</p>
   </div>
+  <div class="claim">
+    <span class="tag">Measured</span>
+    <h3>4. One model through every stage: examples, then preferences, then RL</h3>
+    <p>AllenAI publishes every training stage of Olmo 3 7B from one base, in two branches: an Instruct model that
+      answers directly, and a Think model that reasons first. We ran each stage on the same 100 invented questions.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Stage</th><th>Instruct: declined</th><th>Think: declined</th></tr></thead>
+      <tbody>
+        <tr><td>After examples (SFT)</td><td data-label="Instruct">17</td><td data-label="Think">27</td></tr>
+        <tr><td>+ preferences (DPO)</td><td data-label="Instruct">27</td><td data-label="Think">53</td></tr>
+        <tr><td>+ RL</td><td data-label="Instruct">29</td><td data-label="Think">73</td></tr>
+      </tbody>
+    </table></div>
+    <p>On the Instruct branch, RL changed nothing. On the reasoning branch it raised declining by 20, and in the right
+      way: of the real questions it newly declined, 23 of 24 were ones the stage before had answered wrongly, and it
+      knew exactly as many facts as before. No stage, on either branch, added facts.</p>
+    <p>Preference tuning also left a quirk on the Instruct branch: it put "UNKNOWN" on its own line after 119 of its
+      240 answers, right or wrong. RL removed most of it.</p>
+  </div>
 </section>
 
 <section aria-labelledby="why">
@@ -253,6 +272,9 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
       them, and better attempts become more likely. It never imitates anyone else's text, only its own better
       behaviour, so nothing pushes it to sound surer than it is, and what the reward does not touch, like trivia,
       mostly stays as it was.</p>
+    <p><strong>Olmo adds a wrinkle.</strong> RL left what the model knew unchanged on both branches, as the theory
+      says. But on the reasoning branch it also made the model much more willing to say it doesn't know, where on
+      the direct-answer branch it did nothing. Whether RL moves caution seems to depend on what it starts from.</p>
     <p><strong>The reward decides the habits.</strong> The pi adapter's training scored any blocked shortcut as zero
       and paid a small bonus for using fewer tool calls, so "do the work, check it, stop" was the cheapest way to
       score. DaisyRose trained on hour-long tasks where persistence pays.</p>
@@ -276,14 +298,19 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
 <section aria-labelledby="limits">
   <h2 id="limits">Limits, and what we test next</h2>
   <ul class="plain">
-    <li>Two RL models, both built on Qwen3.8-27B. Five non-RL variants built on three base models.</li>
+    <li>Two RL variants of Qwen3.8-27B, five non-RL variants on three base models, and AllenAI's Olmo 3 7B stages (one
+      7B family; its first reasoning stage looped to the token cap on 34 questions and ships a slightly different
+      default system message).</li>
     <li>Thinking off, and the prompt offers UNKNOWN. DaisyRose was very likely trained with thinking on. The pi
       adapter's extra carefulness in Hermes shows with thinking off only.</li>
     <li>100 invented questions per model; short English factual questions only.</li>
     <li><strong>Done:</strong> keeping the training off the last layers did not protect it
       (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/frozen-layers/RESULT_FROZEN_LAYERS.md">receipt</a>).</li>
-    <li><strong>Next:</strong> a model fine-tuned with examples first and RL after (does the drop come back?), and a third
-      RL model from another team.</li>
+    <li><strong>Done:</strong> a model fine-tuned with examples first and RL after. On Olmo 3 7B, RL brought caution
+      back on the reasoning branch only
+      (<a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/olmo3-ladder/RESULT_OLMO3_THINK.md">reasoning</a>,
+      <a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/olmo3-ladder/RESULT_OLMO3_LADDER.md">direct</a>).</li>
+    <li><strong>Next:</strong> a third RL model from another team.</li>
   </ul>
 </section>
 
@@ -298,6 +325,8 @@ footer .help { background: var(--surface); border: 1px solid var(--rule); border
       thinking off and on.</li>
     <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/abstend/FACT_SHEET_FINETUNE_SERIES.md">The fine-tune series fact sheet</a>,
       with every variant's receipt.</li>
+    <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/olmo3-ladder/RESULT_OLMO3_THINK.md">Olmo 3 7B stages</a>,
+      both branches.</li>
     <li><a href="https://github.com/apollo-mg/Project-Apollo/blob/main/data/receipts/agentic-gaming/RESULT_MAIN_v1.md">The agent test</a>
       and how it scores "impossible", gaming and false success.</li>
   </ul>
